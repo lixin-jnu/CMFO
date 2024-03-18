@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import networkx as nx
-import math, copy, pickle
+import sys, math, copy, pickle
 
 
 ##################################
@@ -82,6 +82,7 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
               task_sorting_strategy):
 
     #===初始化函数集和软截止期===
+    cache_capacity *= 1024.0
     n = 125
     bandwidth_sub_1 = 1000.0
     bandwidth_sub_6 = 2000.0
@@ -592,20 +593,37 @@ lambda_rate = 10
 cost_diff = 1.2  #不同服务提供商之间的传输代价
 func_num = 10  #函数集中的函数个数
 cpu_core = 100
-cache_capacity = 256 * 1024.0  #暂时假设相同
+cache_capacity = 256
 soft_ddl_param = [0.40, 0.50]
 
 #===指定各算法组件的策略===
-node_selection_strategy = "NS_min_dis_all"
-path_selection_strategy = "PS_min_dis"
-task_sorting_strategy = "TS_closest_soft_ddl"
+# node_selection_strategy = "NS_min_dis_all"
+# path_selection_strategy = "PS_min_dis"
+# task_sorting_strategy = "TS_closest_soft_ddl"
 
 try:
+
+    node_selection_strategy = sys.argv[1]
+    path_selection_strategy = sys.argv[2]
+    task_sorting_strategy = sys.argv[3]
+
     AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
           soft_ddl_param, node_selection_strategy, path_selection_strategy,
           task_sorting_strategy)
+    
+    node_selection_strategy = sys.argv[4]
+    path_selection_strategy = sys.argv[5]
+    task_sorting_strategy = sys.argv[6]
+
+    AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
+          soft_ddl_param, node_selection_strategy, path_selection_strategy,
+          task_sorting_strategy)
+
 except Exception as e:
+    
+    print("==============")
     print(e)
     print(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
               soft_ddl_param, node_selection_strategy, path_selection_strategy,
               task_sorting_strategy, -1, sep=',')
+    print("==============")
