@@ -360,6 +360,10 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
     # 在每一时隙开始时进行调度
     while task_over_num < task_num:
 
+        # 一.五万个任务执行完毕后结束本次实验
+        if task_over_num > 50000:
+            break
+
         # 边缘节点不同队列的数据格式
         # recv_queue|tram_queue->[[task,t],...]
         # wait_queue|exec_queue->[task,...]
@@ -433,7 +437,7 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
                     ])
                     task_use_num += 1
         else:
-            # 在全部任务到来后结束本次实验(暂时)
+            # 二.在全部任务到来后结束本次实验
             break
 
         # 对每个边缘节点接收到的到期任务进行卸载决策并放入到对应边缘节点的等待队列或传输队列
@@ -603,7 +607,7 @@ combinations = list(
             path_selection_strategy_sp, task_sorting_strategy_sp))
 
 start = 0
-end = 1
+end = 6700
 
 for i in range(start, end):
 
@@ -620,15 +624,16 @@ for i in range(start, end):
     path_selection_strategy = combinations[i][7]  #路径选择策略
     task_sorting_strategy = combinations[i][8]  #任务排序策略
 
-    print(
-        lambda_rate,
-        cost_diff,
-        func_num,
-        cpu_core,
-        cache_capacity,
-        soft_ddl_param,
-        node_selection_strategy,
-        path_selection_strategy,
-        task_sorting_strategy,
-        AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity, soft_ddl_param, node_selection_strategy, path_selection_strategy, task_sorting_strategy),
-        sep="|")
+    print(lambda_rate,
+          cost_diff,
+          func_num,
+          cpu_core,
+          cache_capacity,
+          soft_ddl_param,
+          node_selection_strategy,
+          path_selection_strategy,
+          task_sorting_strategy,
+          AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
+                    soft_ddl_param, node_selection_strategy,
+                    path_selection_strategy, task_sorting_strategy),
+          sep="|")
