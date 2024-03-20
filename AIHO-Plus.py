@@ -1,23 +1,14 @@
 import numpy as np
 import pandas as pd
 import networkx as nx
-import sys, math, copy, pickle
+import math, copy, pickle
+from itertools import product
 
 
 ##################################
 # ----------各种工具类----------- #
 ##################################
-def auto_str(cls):
-    def __str__(self):
-        return '%s(%s)' % (type(self).__name__, ', '.join(
-            '%s=%s' % item for item in vars(self).items()))
-
-    cls.__str__ = __str__
-    return cls
-
-
 # 1.任务类
-@auto_str
 class Task:
     def __init__(self, taskId, arvTime, execTime, softDdl, dataVol, cpuCore,
                  instNum, funcId, serviceId):
@@ -33,7 +24,6 @@ class Task:
 
 
 # 2.边缘节点类
-@auto_str
 class Node:
     def __init__(self, nodeId, serviceId, cpuCore, cacheCapacity, funcSet,
                  bandwidth, recv_queue, wait_queue, exec_queue, tran_queue):
@@ -564,11 +554,11 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
                     curNd.cacheCapacity -= tk.instNum * func_set[tk.funcId][2]
                     del WaitQe[i]
 
-        print("===================")
-        print(task_use_num)
-        print(task_over_num)
-        print(t, Local, Inter_Edge, Cross_Edge, Cold_Start)
-        print("===================")
+        # print("===================")
+        # print(task_use_num)
+        # print(task_over_num)
+        # print(t, Local, Inter_Edge, Cross_Edge, Cold_Start)
+        # print("===================")
         t += 1
 
     return np.mean(list(delayDic.values()))
@@ -584,33 +574,61 @@ with open(r"outData/user.pkl", "rb") as file:
 with open(r"outData/node.pkl", "rb") as file:
     node = pickle.load(file)
 
-# ===指定各个超参数的值===
-lambda_rate = 10
-cost_diff = 1.2  #不同服务提供商之间的传输代价
-func_num = 20  #函数集中的函数个数
-cpu_core = 200
-cache_capacity = 256
-soft_ddl_param = [0.40, 0.50]
+lambda_rate_sp = [2, 4, 6, 8, 10]
+cost_diff_sp = [1.2, 1.4, 1.6, 1.8, 2.0]
+func_num_sp = [10, 20, 30, 40, 50]
+cpu_core_sp = [100, 200, 300, 400, 500]
+cache_capacity_sp = [256, 512, 768, 1024]
+soft_ddl_param_sp = [[0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5]]
 
-# ===指定各个算法组件的策略===
-#node_selection_strategy = "NS_min_dis_all"
-#path_selection_strategy = "PS_min_dis"
-#task_sorting_strategy = "TS_closest_soft_ddl"
+node_selection_strategy_sp = [
+    "NS_min_dis_own",
+    "NS_min_dis_all",
+    "NS_min_user",
+    "NS_max_node",
+    "NS_exist_func",
+]
+path_selection_strategy_sp = ["PS_min_dis", "PS_max_cache", "PS_max_cpu"]
+task_sorting_strategy_sp = [
+    "TS_exec_time_asc",
+    "TS_data_vol_asc",
+    "TS_exec_time_to_data_vol_ratio_asc",
+    "TS_closest_soft_ddl",
+    "TS_highest_response_ratio",
+]
 
-node_selection_strategy = sys.argv[1]
-path_selection_strategy = sys.argv[2]
-task_sorting_strategy = sys.argv[3]
+combinations = list(
+    product(lambda_rate_sp, cost_diff_sp, func_num_sp, cpu_core_sp,
+            cache_capacity_sp, soft_ddl_param_sp, node_selection_strategy_sp,
+            path_selection_strategy_sp, task_sorting_strategy_sp))
 
-print(
-    AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
-              soft_ddl_param, node_selection_strategy, path_selection_strategy,
-              task_sorting_strategy))
+start = 0
+end = 1
 
-node_selection_strategy = sys.argv[4]
-path_selection_strategy = sys.argv[5]
-task_sorting_strategy = sys.argv[6]
+for i in range(start, end):
 
-print(
-    AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
-              soft_ddl_param, node_selection_strategy, path_selection_strategy,
-              task_sorting_strategy))
+    # ===指定各个超参数的值===
+    lambda_rate = combinations[i][0]  #到达率
+    cost_diff = combinations[i][1]  #传输代价
+    func_num = combinations[i][2]  #函数集大小
+    cpu_core = combinations[i][3]  #CPU核心数
+    cache_capacity = combinations[i][4]  #缓存容量
+    soft_ddl_param = combinations[i][5]  #软截止期生成参数
+
+    # ===指定各个算法组件的策略===
+    node_selection_strategy = combinations[i][6]  #节点选择策略
+    path_selection_strategy = combinations[i][7]  #路径选择策略
+    task_sorting_strategy = combinations[i][8]  #任务排序策略
+
+    print(
+        lambda_rate,
+        cost_diff,
+        func_num,
+        cpu_core,
+        cache_capacity,
+        soft_ddl_param,
+        node_selection_strategy,
+        path_selection_strategy,
+        task_sorting_strategy,
+        AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity, soft_ddl_param, node_selection_strategy, path_selection_strategy, task_sorting_strategy),
+        sep="|")
