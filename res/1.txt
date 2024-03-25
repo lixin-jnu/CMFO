@@ -1,0 +1,4 @@
+
+4|1.8|40|300|1024|[0.1, 0.2]|NS_min_dis_own|PS_min_dis|TS_data_vol_asc|3.871422893481717|261301
+4|1.8|40|300|1024|[0.1, 0.2]|NS_min_dis_own|PS_min_dis|TS_data_vol_asc|4.068221220527046|261301
+4|1.8|40|300|1024|[0.1, 0.2]|NS_min_dis_own|PS_max_cpu|TS_exec_time_asc|4.026714158504007|261310

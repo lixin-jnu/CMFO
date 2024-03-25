@@ -606,8 +606,8 @@ combinations = list(
             cache_capacity_sp, soft_ddl_param_sp, node_selection_strategy_sp,
             path_selection_strategy_sp, task_sorting_strategy_sp))
 
-start = 0
-end = 6700
+start = 502500
+end = 509200
 
 for i in range(start, end):
 
