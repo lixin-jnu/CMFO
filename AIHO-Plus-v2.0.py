@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import math, pickle
 from itertools import product
-from pyinstrument import Profiler
+# from pyinstrument import Profiler
 
 
 ##################################
@@ -143,40 +143,6 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
                 ))
     node_list = np.array(node_list)
 
-    # ===初始化新的Sub_1|Sub_6|mmWave_24|Cross_net基站拓扑图===
-    # G_sub_1 = copy.deepcopy(graph["sub-1"])
-    # G_sub_6 = copy.deepcopy(graph["sub-6"])
-    # G_mmWave_24 = copy.deepcopy(graph["mmWave-24"])
-    # G_cross_net = copy.deepcopy(graph["cross-net"])
-
-    # for u, v, _ in G_sub_1.edges(data=True):
-    #     G_sub_1[u][v]["weight"] = 1.0 / bandwidth_sub_1
-
-    # for u, v, _ in G_sub_6.edges(data=True):
-    #     G_sub_6[u][v]["weight"] = 1.0 / bandwidth_sub_6
-
-    # for u, v, _ in G_mmWave_24.edges(data=True):
-    #     G_mmWave_24[u][v]["weight"] = 1.0 / bandwidth_mmWave_24
-
-    # for u, v, _ in G_cross_net.edges(data=True):
-    #     if u in sub_1:
-    #         bandwidth = bandwidth_sub_1
-    #     elif u in sub_6:
-    #         bandwidth = bandwidth_sub_6
-    #     else:
-    #         bandwidth = bandwidth_mmWave_24
-    #     if ((u in sub_1 and v in sub_1) or (u in sub_6 and v in sub_6)
-    #             or (u in mmWave_24 and v in mmWave_24)):
-    #         G_cross_net[u][v]["weight"] = 1.0 / bandwidth
-    #     else:
-    #         G_cross_net[u][v]["weight"] = cost_diff / bandwidth
-
-    # G = {}
-    # G[1] = G_sub_1
-    # G[6] = G_sub_6
-    # G[24] = G_mmWave_24
-    # G["cross-net"] = G_cross_net
-
     ##################################
     # ---------节点选择策略---------- #
     ##################################
@@ -196,16 +162,7 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
     def NS_max_node(userId, funcId=-1):
         return user[userId][3]
 
-    # # 5.max_cpu:选择负载最低(剩余CPU核心数最多)的基站
-    # def NS_max_cpu(userId, funcId=-1):
-    #     return max(user[userId], key=lambda x: node_list[x[0]].cpuCore)[0]
-
-    # # 6.max_cache:选择剩余缓存容量最多的基站
-    # def NS_max_cache(userId, funcId=-1):
-    #     return max(user[userId],
-    #                key=lambda x: node_list[x[0]].cacheCapacity)[0]
-
-    # 7.exist_func:选择距离最近的存在函数的基站
+    # 5.exist_func:选择距离最近的存在函数的基站
     def NS_exist_func(userId, funcId):
         for nd in user[userId][4]:
             if funcId in node_list[nd].funcSet:
@@ -218,8 +175,6 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
         "NS_min_dis_all": NS_min_dis_all,
         "NS_min_user": NS_min_user,
         "NS_max_node": NS_max_node,
-        # "NS_max_cpu": NS_max_cpu,
-        # "NS_max_cache": NS_max_cache,
         "NS_exist_func": NS_exist_func
     }
 
@@ -241,7 +196,8 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
     # 2.max_cpu:寻找可以处理任务task的剩余Cpu核心数最多的边缘节点
     def PS_max_cpu(G, nodeId, tk):
         sortedNdlst = sorted(list(G[nodeId].keys()),
-                             key=lambda x: -node_list[x].cpuCore)
+                             key=lambda x:
+                             (-node_list[x].cpuCore, G[nodeId][x]))
         for tarNd in sortedNdlst:
             if tarNd == nodeId:
                 continue
@@ -255,7 +211,23 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
     # 3.max_cache:寻找可以处理任务task的剩余缓存容量最多的边缘节点
     def PS_max_cache(G, nodeId, tk):
         sortedNdlst = sorted(list(G[nodeId].keys()),
-                             key=lambda x: -node_list[x].cacheCapacity)
+                             key=lambda x:
+                             (-node_list[x].cacheCapacity, G[nodeId][x]))
+        for tarNd in sortedNdlst:
+            if tarNd == nodeId:
+                continue
+            curNd = node_list[tarNd]
+            if (tk.instNum * tk.cpuCore <= curNd.cpuCore) and (
+                    tk.instNum * func_set[tk.funcId][2] <=
+                    curNd.cacheCapacity) and (tk.funcId in curNd.funcSet):
+                return tarNd, tk.dataVol * G[nodeId][tarNd]
+        return -1, np.finfo(np.float32).max
+
+    # 4.min_wait_queue:寻找可以处理任务task的当前等待任务个数最少的边缘节点
+    def PS_min_wait_queue(G, nodeId, tk):
+        sortedNdlst = sorted(list(G[nodeId].keys()),
+                             key=lambda x:
+                             (len(node_list[x].wait_queue), G[nodeId][x]))
         for tarNd in sortedNdlst:
             if tarNd == nodeId:
                 continue
@@ -269,43 +241,32 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
     PS = {
         "PS_min_dis": PS_min_dis,
         "PS_max_cache": PS_max_cache,
-        "PS_max_cpu": PS_max_cpu
+        "PS_max_cpu": PS_max_cpu,
+        "PS_min_wait_queue": PS_min_wait_queue
     }
 
     ##################################
     # ---------任务排序策略---------- #
     ##################################
     # 1.exec_time_asc:按照任务的执行时间升序排序
-    def TS_exec_time_asc(wait_queue, cur_time):
+    def TS_exec_time_asc(wait_queue, cur_time=-1):
         return sorted(wait_queue, key=lambda x: x.execTime)
 
-    # 2.exec_time_desc:按照任务的执行时间降序排序
-    def TS_exec_time_desc(wait_queue, cur_time):
-        return sorted(wait_queue, key=lambda x: -x.execTime)
-
-    # 3.data_vol_asc:按照任务的数据量升序排序
-    def TS_data_vol_asc(wait_queue, cur_time):
+    # 2.data_vol_asc:按照任务的数据量升序排序
+    def TS_data_vol_asc(wait_queue, cur_time=-1):
         return sorted(wait_queue, key=lambda x: x.dataVol)
 
-    # 4.data_vol_desc:按照任务的数据量降序排序
-    def TS_data_vol_desc(wait_queue, cur_time):
-        return sorted(wait_queue, key=lambda x: -x.dataVol)
-
-    # 5.exec_time_to_data_vol_ratio_asc:按照任务的执行时间/数据量升序排序
-    def TS_exec_time_to_data_vol_ratio_asc(wait_queue, cur_time):
+    # 3.exec_time_to_data_vol_ratio_asc:按照任务的执行时间/数据量升序排序
+    def TS_exec_time_to_data_vol_ratio_asc(wait_queue, cur_time=-1):
         return sorted(wait_queue, key=lambda x: x.execTime / x.dataVol)
 
-    # 6.exec_time_to_data_vol_ratio_desc:按照任务的执行时间/数据量降序排序
-    def TS_exec_time_to_data_vol_ratio_desc(wait_queue, cur_time):
-        return sorted(wait_queue, key=lambda x: -x.execTime / x.dataVol)
-
-    # 7.closest_soft_ddl:按照任务的软截止期逼近程度排序
+    # 4.closest_soft_ddl:按照任务的软截止期逼近程度排序
     def TS_closest_soft_ddl(wait_queue, cur_time):
         return sorted(
             wait_queue,
             key=lambda x: x.arvTime + x.execTime + x.softDdl - cur_time)
 
-    # 8.highest_response_ratio:按照任务的响应比降序排序
+    # 5.highest_response_ratio:按照任务的响应比降序排序
     def TS_highest_response_ratio(wait_queue, cur_time):
         return sorted(
             wait_queue,
@@ -313,15 +274,11 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
 
     TS = {
         "TS_exec_time_asc": TS_exec_time_asc,
-        "TS_exec_time_desc": TS_exec_time_desc,
         "TS_data_vol_asc": TS_data_vol_asc,
-        "TS_data_vol_desc": TS_data_vol_desc,
         "TS_exec_time_to_data_vol_ratio_asc":
         TS_exec_time_to_data_vol_ratio_asc,
-        "TS_exec_time_to_data_vol_ratio_desc":
-        TS_exec_time_to_data_vol_ratio_desc,
         "TS_closest_soft_ddl": TS_closest_soft_ddl,
-        "TS_highest_response_ratio": TS_highest_response_ratio,
+        "TS_highest_response_ratio": TS_highest_response_ratio
     }
 
     task_num = len(task)  #任务总数
@@ -343,7 +300,9 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
     # 在每一时隙开始时进行调度
     while task_over_num < task_num:
 
-        # 一.五万个任务执行完毕后结束本次实验
+        # print("===================")
+        # print("Time slot:", t)
+
         if task_over_num > 10000:
             break
 
@@ -367,7 +326,6 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
                 if ExecQe[i].execTime == 0:
                     curNd.funcSet[ExecQe[i].funcId] -= 1
                     if curNd.funcSet[ExecQe[i].funcId] == 0:
-                        # del curNd.funcSet[ExecQe[i].funcId]
                         curNd.funcSet.pop(ExecQe[i].funcId)
                     curNd.cpuCore += ExecQe[i].instNum * ExecQe[i].cpuCore
                     curNd.cacheCapacity += ExecQe[i].instNum * func_set[
@@ -421,7 +379,6 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
                     ])
                     task_use_num += 1
         else:
-            # 二.在全部任务到来后结束本次实验
             break
 
         # 对每个边缘节点接收到的到期任务进行卸载决策并放入到对应边缘节点的等待队列或传输队列
@@ -541,10 +498,9 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
                     curNd.cacheCapacity -= tk.instNum * func_set[tk.funcId][2]
                     del WaitQe[i]
 
-        # print("===================")
         # print(task_use_num)
         # print(task_over_num)
-        # print(t, Local, Inter_Edge, Cross_Edge, Cold_Start)
+        # print(Local, Inter_Edge, Cross_Edge, Cold_Start)
         # print("===================")
         t += 1
 
@@ -562,9 +518,9 @@ with open(r"outData/node.pkl", "rb") as file:
     node = pickle.load(file)
 
 lambda_rate_sp = [2, 4, 6, 8, 10]
-cost_diff_sp = [1.2, 1.4, 1.6, 1.8, 2.0]
+cost_diff_sp = [1.2, 1.4, 1.6, 1.8]
 func_num_sp = [10, 20, 30, 40, 50]
-cpu_core_sp = [100, 200, 300, 400, 500]
+cpu_core_sp = [200, 300, 400, 500]
 cache_capacity_sp = [256, 512, 768, 1024]
 soft_ddl_param_sp = [[0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5]]
 
@@ -572,16 +528,18 @@ node_selection_strategy_sp = [
     "NS_min_dis_own",
     "NS_min_dis_all",
     "NS_min_user",
-    "NS_max_node",
-    "NS_exist_func",
+    # "NS_max_node",
+    "NS_exist_func"
 ]
-path_selection_strategy_sp = ["PS_min_dis", "PS_max_cache", "PS_max_cpu"]
+path_selection_strategy_sp = [
+    "PS_min_dis", "PS_max_cache", "PS_max_cpu", "PS_min_wait_queue"
+]
 task_sorting_strategy_sp = [
     "TS_exec_time_asc",
     "TS_data_vol_asc",
     "TS_exec_time_to_data_vol_ratio_asc",
     "TS_closest_soft_ddl",
-    "TS_highest_response_ratio",
+    "TS_highest_response_ratio"
 ]
 
 combinations = list(
@@ -589,12 +547,12 @@ combinations = list(
             cache_capacity_sp, soft_ddl_param_sp, node_selection_strategy_sp,
             path_selection_strategy_sp, task_sorting_strategy_sp))
 
-item = 1
-start = 261300 + 10
-end = start + 1
+item = 40
+start = 249600
+end = 256000
 
-profiler = Profiler()
-profiler.start()
+# profiler = Profiler()
+# profiler.start()
 
 for i in range(start, end):
 
@@ -623,5 +581,5 @@ for i in range(start, end):
             path_selection_strategy + "|" + task_sorting_strategy + "|" +
             str(result) + "|" + str(i) + "\n")
 
-profiler.stop()
-profiler.print()
+# profiler.stop()
+# profiler.print()
