@@ -419,11 +419,9 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
                     #-----------------#
                     '''
                     # Inter-Edge:在该基站的内网寻找其它基站处理该任务
-                    ieNd, ieCost = PS[path_selection_strategy](
-                        graph[curNd.serviceId], nd, tk)
+                    ieNd, ieCost = -1, np.finfo(np.float32).max
                     # Cross-Edge:在全网寻找其它基站处理该任务
-                    ceNd, ceCost = PS[path_selection_strategy](
-                        graph[cost_diff], nd, tk)
+                    ceNd, ceCost = -1, np.finfo(np.float32).max
                     # Cold-start:在当前边缘节点冷启动处理该任务
                     csNd, csCost = nd, func_set[tk.funcId][1]
                     # 选择代价最小的处理方式
@@ -460,7 +458,7 @@ def AIHO_Plus(lambda_rate, func_num, cost_diff, cpu_core, cache_capacity,
                     node_list[offload_decision[1]].tran_queue.append(
                         [tk, math.ceil(offload_decision[2])])
 
-        # 将每个边缘节点卸载而来的任务+冷启动完成的任务放入执行队列
+        # 将每个边缘节点卸载而来的任务+冷启动完成的任务放入等待队列
         for nd in np.arange(n):
             curNd = node_list[nd]
             TranQe = curNd.tran_queue
@@ -528,7 +526,7 @@ soft_ddl_param_sp = [[0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5]]
 node_selection_strategy_sp = [
     # "NS_min_dis_own",
     # "NS_min_dis_all",
-    "NS_min_user"
+    "NS_min_user",
     # "NS_max_node"
     # "NS_exist_func"
 ]
@@ -539,7 +537,7 @@ task_sorting_strategy_sp = [
     # "TS_exec_time_asc",
     # "TS_data_vol_asc",
     # "TS_exec_time_to_data_vol_ratio_asc",
-    # "TS_closest_soft_ddl"
+    # "TS_closest_soft_ddl",
     "TS_highest_response_ratio"
 ]
 
@@ -574,13 +572,13 @@ for i in range(start, end):
                        cache_capacity, soft_ddl_param, node_selection_strategy,
                        path_selection_strategy, task_sorting_strategy)
 
-    with open("res-1-aiho-plus/" + str(item) + ".txt", "a") as file:
+    with open("res-4-local/" + str(item) + ".txt", "a") as file:
         file.write(
             str(lambda_rate) + "|" + str(cost_diff) + "|" + str(func_num) +
             "|" + str(cpu_core) + "|" + str(cache_capacity) + "|" +
             str(soft_ddl_param) + "|" + node_selection_strategy + "|" +
             path_selection_strategy + "|" + task_sorting_strategy + "|" +
-            str(result) + "|AIHO-Plus|" + str(i) + "\n")
+            str(result) + "|Local|" + str(i) + "\n")
 
 # profiler.stop()
 # profiler.print()

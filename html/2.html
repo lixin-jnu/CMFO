@@ -25,7 +25,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_b149facf98b4fcc189b048bc5b4bd36d {
+                #map_57eaa25c7edc7464c32bfa529d8a13ab {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -39,14 +39,14 @@
 <body>
     
     
-            <div class="folium-map" id="map_b149facf98b4fcc189b048bc5b4bd36d" ></div>
+            <div class="folium-map" id="map_57eaa25c7edc7464c32bfa529d8a13ab" ></div>
         
 </body>
 <script>
     
     
-            var map_b149facf98b4fcc189b048bc5b4bd36d = L.map(
-                "map_b149facf98b4fcc189b048bc5b4bd36d",
+            var map_57eaa25c7edc7464c32bfa529d8a13ab = L.map(
+                "map_57eaa25c7edc7464c32bfa529d8a13ab",
                 {
                     center: [-37.81517, 144.97476],
                     crs: L.CRS.EPSG3857,
@@ -55,68 +55,19 @@
                     preferCanvas: false,
                 }
             );
-            L.control.scale().addTo(map_b149facf98b4fcc189b048bc5b4bd36d);
+            L.control.scale().addTo(map_57eaa25c7edc7464c32bfa529d8a13ab);
 
             
 
         
     
-            var tile_layer_501f67db12bcf5275c30c173dc0a2ec6 = L.tileLayer(
+            var tile_layer_0859e8a70a53092da0287b4c48bac08a = L.tileLayer(
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {"attribution": "OpenStreetMap", "detectRetina": false, "maxNativeZoom": 19, "maxZoom": 19, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
             );
         
     
-            tile_layer_501f67db12bcf5275c30c173dc0a2ec6.addTo(map_b149facf98b4fcc189b048bc5b4bd36d);
+            tile_layer_0859e8a70a53092da0287b4c48bac08a.addTo(map_57eaa25c7edc7464c32bfa529d8a13ab);
         
-    
-            var marker_65f2ae96460602dc737113dc73448246 = L.marker(
-                [-37.81517, 144.97476],
-                {}
-            ).addTo(map_b149facf98b4fcc189b048bc5b4bd36d);
-        
-    
-            var icon_73f39675f468e6437fd45ac67e264956 = L.AwesomeMarkers.icon(
-                {"extraClasses": "fa-rotate-0", "icon": "cloud", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
-            );
-            marker_65f2ae96460602dc737113dc73448246.setIcon(icon_73f39675f468e6437fd45ac67e264956);
-        
-    
-        var popup_6d4ee172123ca6a3fee353c3ec4be59a = L.popup({"maxWidth": "100%"});
-
-        
-            
-                var html_404acd548f69536e0a96c845207ccea9 = $(`<div id="html_404acd548f69536e0a96c845207ccea9" style="width: 100.0%; height: 100.0%;">test location</div>`)[0];
-                popup_6d4ee172123ca6a3fee353c3ec4be59a.setContent(html_404acd548f69536e0a96c845207ccea9);
-            
-        
-
-        marker_65f2ae96460602dc737113dc73448246.bindPopup(popup_6d4ee172123ca6a3fee353c3ec4be59a)
-        ;
-
-        
-    
-    
-                var lat_lng_popup_8c9473bd46b3ceb7b1bd7f846bfc892b = L.popup();
-                function latLngPop(e) {
-                    lat_lng_popup_8c9473bd46b3ceb7b1bd7f846bfc892b
-                        .setLatLng(e.latlng)
-                        .setContent("Latitude: " + e.latlng.lat.toFixed(4) +
-                                    "<br>Longitude: " + e.latlng.lng.toFixed(4))
-                        .openOn(map_b149facf98b4fcc189b048bc5b4bd36d);
-                    }
-                map_b149facf98b4fcc189b048bc5b4bd36d.on('click', latLngPop);
-            
-    
-                function newMarker(e){
-                    var new_mark = L.marker().setLatLng(e.latlng).addTo(map_b149facf98b4fcc189b048bc5b4bd36d);
-                    new_mark.dragging.enable();
-                    new_mark.on('dblclick', function(e){ map_b149facf98b4fcc189b048bc5b4bd36d.removeLayer(e.target)})
-                    var lat = e.latlng.lat.toFixed(4),
-                       lng = e.latlng.lng.toFixed(4);
-                    new_mark.bindPopup("Latitude: " + lat + "<br>Longitude: " + lng );
-                    };
-                map_b149facf98b4fcc189b048bc5b4bd36d.on('click', newMarker);
-            
 </script>
 </html>
