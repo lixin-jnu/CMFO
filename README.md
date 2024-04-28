@@ -1,3 +1,3 @@
-### AMFO
+### CMFO
 
-Average latency constrained Multi-service provider Fusion Offloading Algorithm.
+Cross-Net based Multi-service provider Fusion Offloading Algorithm.
